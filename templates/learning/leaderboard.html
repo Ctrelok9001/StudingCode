@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %}Таблица лидеров — PyLearn{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+  <div class="text-center space-y-2">
+    <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
+      <i class="fa-solid fa-trophy text-amber-500"></i>
+      <span>Зал славы разработчиков</span>
+    </div>
+    <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">
+      Таблица лидеров
+    </h1>
+    <p class="text-xs sm:text-sm text-slate-500">
+      Ученики, набравшие наибольшее количество очков опыта (XP) за решение задач и прохождение уроков.
+    </p>
+  </div>
+  <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+    <div class="divide-y divide-slate-100">
+      <div class="grid grid-cols-12 gap-4 px-6 py-3.5 bg-slate-50 text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
+        <div class="col-span-1 text-center">Место</div>
+        <div class="col-span-6">Пользователь</div>
+        <div class="col-span-2 text-center">Стрик</div>
+        <div class="col-span-3 text-right">Опыт (XP)</div>
+      </div>
+
+      {% for p in users %}
+        <div class="grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-slate-50/80 transition-colors {% if p.user == request.user %}bg-sky-50/50{% endif %}">
+          <div class="col-span-1 flex justify-center">
+            {% if forloop.counter == 1 %}
+              <div class="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-bold text-sm shadow-xs">
+                🥇
+              </div>
+            {% elif forloop.counter == 2 %}
+              <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-sm shadow-xs">
+                🥈
+              </div>
+            {% elif forloop.counter == 3 %}
+              <div class="w-8 h-8 rounded-full bg-amber-200 text-amber-800 flex items-center justify-center font-bold text-sm shadow-xs">
+                🥉
+              </div>
+            {% else %}
+              <span class="font-mono font-bold text-xs text-slate-400">
+                #{{ forloop.counter }}
+              </span>
+            {% endif %}
+          </div>
+          <div class="col-span-6 flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-sky-400 to-indigo-500 text-white font-bold text-xs flex items-center justify-center shadow-xs">
+              {{ p.user.username|slice:":1"|upper }}
+            </div>
+            <div>
+              <div class="font-bold text-sm text-slate-800 flex items-center space-x-1.5">
+                <span>{{ p.user.username }}</span>
+                {% if p.user == request.user %}
+                  <span class="px-2 py-0.2 rounded-full text-[10px] font-bold bg-sky-100 text-sky-700">Вы</span>
+                {% endif %}
+              </div>
+              <div class="text-[11px] text-slate-400">
+                Уровень {{ p.level }} • {{ p.bio|default:"Изучает Python" }}
+              </div>
+            </div>
+          </div>
+          <div class="col-span-2 flex justify-center">
+            <span class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full streak-badge text-xs font-bold">
+              <i class="fa-solid fa-fire text-orange-500 text-xs"></i>
+              <span>{{ p.streak_days }} дн.</span>
+            </span>
+          </div>
+          <div class="col-span-3 text-right">
+            <span class="font-mono font-extrabold text-sm text-amber-600 bg-amber-50 px-3 py-1 rounded-xl">
+              {{ p.xp }} XP
+            </span>
+          </div>
+
+        </div>
+      {% empty %}
+        <div class="p-8 text-center text-xs text-slate-400">Пока нет участников</div>
+      {% endfor %}
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}

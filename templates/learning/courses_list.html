@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Обучающие треки и курсы — PyLearn{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+  <div class="space-y-2">
+    <div class="flex items-center space-x-2">
+      <span class="px-3 py-1 rounded-full text-xs font-bold bg-sky-100 text-sky-700">
+        <i class="fa-solid fa-graduation-cap mr-1"></i>Каталог курсов (LMS)
+      </span>
+      <span class="text-xs text-slate-400 font-medium">Модульное онлайн-обучение</span>
+    </div>
+    <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">
+      Структурированные программы обучения
+    </h1>
+    <p class="text-sm text-slate-500 max-w-2xl">
+      Изучайте теорию шаг за шагом, закрепляйте каждый урок решением задач в онлайн-тренажере и получайте опыт.
+    </p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    {% for course in courses %}
+      <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-6 group">
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800">
+              {{ course.get_level_display }}
+            </span>
+            <span class="text-xs font-semibold text-slate-400 flex items-center">
+              <i class="fa-regular fa-clock mr-1"></i>{{ course.estimated_time }}
+            </span>
+          </div>
+
+          <div class="flex items-start space-x-4">
+            <div class="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center text-2xl group-hover:scale-105 transition-transform flex-shrink-0">
+              <i class="fa-brands fa-python"></i>
+            </div>
+            <div>
+              <h3 class="text-lg font-extrabold text-slate-900 group-hover:text-sky-600 transition-colors">
+                {{ course.title }}
+              </h3>
+              <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                {{ course.description }}
+              </p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 pt-2 text-xs">
+            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+              <span class="text-slate-400">Модулей:</span>
+              <span class="font-bold text-slate-800 ml-1 font-mono">{{ course.modules.count }}</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-amber-50 border border-amber-100 text-amber-800 flex items-center justify-between">
+              <span>Награда:</span>
+              <span class="font-bold font-mono">+{{ course.xp_total }} XP</span>
+            </div>
+          </div>
+        </div>
+
+        <a href="{% url 'course_detail' course.slug %}" class="w-full py-2.5 rounded-xl font-bold text-xs text-white pylearn-btn text-center shadow-xs">
+          Открыть программу курса →
+        </a>
+      </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

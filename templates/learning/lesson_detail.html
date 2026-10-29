@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ lesson.title }} — {{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+  <div class="flex items-center space-x-2 text-xs font-semibold text-slate-400">
+    <a href="{% url 'course_detail' course.slug %}" class="hover:text-sky-600 transition-colors">
+      <i class="fa-solid fa-arrow-left mr-1"></i>{{ course.title }}
+    </a>
+    <span>/</span>
+    <span class="text-slate-700">{{ lesson.module.title }}</span>
+  </div>
+  <div class="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200/80 shadow-sm space-y-6">
+    <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+      <span class="px-3 py-1 rounded-full text-xs font-bold bg-sky-50 text-sky-700">
+        Урок {{ lesson.order }}
+      </span>
+      <span class="font-mono text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-xl">
+        +{{ lesson.xp_reward }} XP
+      </span>
+    </div>
+
+    <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+      {{ lesson.title }}
+    </h1>
+    <div class="prose prose-slate max-w-none text-sm text-slate-700 leading-relaxed space-y-4">
+      {{ lesson.content|linebreaks }}
+    </div>
+    {% if lesson.task %}
+      <div class="p-5 rounded-2xl bg-gradient-to-r from-sky-50 to-indigo-50 border border-sky-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div class="space-y-1">
+          <div class="text-[11px] font-extrabold uppercase tracking-wide text-sky-700 flex items-center space-x-1.5">
+            <i class="fa-solid fa-code"></i>
+            <span>Практическое задание тренажера</span>
+          </div>
+          <h4 class="font-extrabold text-slate-900 text-sm">
+            Задача #{{ lesson.task.number }}: {{ lesson.task.title }}
+          </h4>
+          <p class="text-xs text-slate-500">
+            Закрепите изученный материал, написав и протестировав код в онлайн-песочнице.
+          </p>
+        </div>
+        <a href="{% url 'task_detail' lesson.task.slug %}" class="px-5 py-2.5 rounded-xl font-bold text-xs text-white pylearn-btn shadow-md whitespace-nowrap">
+          Перейти к задаче #{{ lesson.task.number }} →
+        </a>
+      </div>
+    {% endif %}
+    <div class="pt-6 border-t border-slate-100 flex items-center justify-between">
+      {% if prev_lesson %}
+        <a href="{% url 'lesson_detail' course.slug prev_lesson.slug %}" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
+          ← {{ prev_lesson.title }}
+        </a>
+      {% else %}
+        <div></div>
+      {% endif %}
+
+      {% if next_lesson %}
+        <a href="{% url 'lesson_detail' course.slug next_lesson.slug %}" class="px-4 py-2 rounded-xl text-xs font-bold text-white pylearn-btn shadow-xs">
+          {{ next_lesson.title }} →
+        </a>
+      {% else %}
+        <a href="{% url 'course_detail' course.slug %}" class="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-xs">
+          Завершить курс 🎉
+        </a>
+      {% endif %}
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

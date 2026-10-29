@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ course.title }} — PyLearn{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+  <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-4">
+    <div class="flex items-center space-x-2">
+      <a href="{% url 'courses_list' %}" class="text-xs font-bold text-slate-400 hover:text-sky-600">
+        <i class="fa-solid fa-arrow-left mr-1"></i>Курсы
+      </a>
+      <span class="text-slate-300">/</span>
+      <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-700">
+        {{ course.language.name }}
+      </span>
+    </div>
+
+    <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+      {{ course.title }}
+    </h1>
+    <p class="text-sm text-slate-600 leading-relaxed">
+      {{ course.description }}
+    </p>
+
+    <div class="flex flex-wrap items-center gap-4 pt-2 text-xs font-semibold text-slate-500">
+      <span class="flex items-center"><i class="fa-regular fa-clock mr-1.5 text-slate-400"></i>{{ course.estimated_time }}</span>
+      <span>•</span>
+      <span class="flex items-center"><i class="fa-solid fa-layer-group mr-1.5 text-slate-400"></i>{{ modules.count }} модуля</span>
+      <span>•</span>
+      <span class="flex items-center text-amber-600"><i class="fa-solid fa-bolt mr-1.5"></i>{{ course.xp_total }} XP всего</span>
+    </div>
+  </div>
+
+  <div class="space-y-6">
+    {% for module in modules %}
+      <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div class="flex items-center space-x-3">
+            <span class="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 font-bold font-mono text-sm flex items-center justify-center">
+              {{ module.order }}
+            </span>
+            <div>
+              <h3 class="font-extrabold text-base text-slate-900">{{ module.title }}</h3>
+              <p class="text-xs text-slate-400">{{ module.description }}</p>
+            </div>
+          </div>
+          <span class="text-xs text-slate-400 font-mono">{{ module.lessons.count }} уроков</span>
+        </div>
+
+        <div class="space-y-2">
+          {% for lesson in module.lessons.all %}
+            <a href="{% url 'lesson_detail' course.slug lesson.slug %}" class="p-3.5 rounded-2xl border border-slate-100 hover:border-sky-300 hover:bg-sky-50/40 transition-all flex items-center justify-between group">
+              <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 rounded-xl {% if lesson.id in completed_lesson_ids %}bg-emerald-100 text-emerald-600{% else %}bg-slate-100 text-slate-500 group-hover:text-sky-600{% endif %} flex items-center justify-center text-xs transition-colors">
+                  {% if lesson.id in completed_lesson_ids %}
+                    <i class="fa-solid fa-check"></i>
+                  {% else %}
+                    <i class="fa-solid fa-book-open"></i>
+                  {% endif %}
+                </div>
+                <div>
+                  <h4 class="font-bold text-xs sm:text-sm text-slate-800 group-hover:text-sky-600 transition-colors">
+                    {{ lesson.title }}
+                  </h4>
+                  {% if lesson.task %}
+                    <span class="text-[10px] text-sky-600 font-semibold flex items-center mt-0.5">
+                      <i class="fa-solid fa-terminal mr-1"></i>Связана практическая задача #{{ lesson.task.number }}
+                    </span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-2">
+                <span class="font-mono text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">
+                  +{{ lesson.xp_reward }} XP
+                </span>
+                <i class="fa-solid fa-chevron-right text-slate-300 group-hover:text-sky-500 text-xs transition-colors"></i>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}Вход в систему — PyLearn{% endblock %}
+
+{% block content %}
+<div class="min-h-[75vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full bg-white rounded-3xl p-8 border border-slate-200/80 shadow-lg space-y-6">
+    
+    <div class="text-center space-y-2">
+      <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 text-white flex items-center justify-center mx-auto text-xl shadow-md shadow-sky-500/20">
+        <i class="fa-solid fa-right-to-bracket"></i>
+      </div>
+      <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Вход в личный кабинет</h2>
+      <p class="text-xs text-slate-500">
+        Введите ваши данные для продолжения обучения и сохранения прогресса.
+      </p>
+    </div>
+
+    <form method="post" action="{% url 'login' %}{% if next %}?next={{ next }}{% endif %}" class="space-y-4">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-700 space-y-1">
+          {% for error in form.non_field_errors %}
+            <p><i class="fa-solid fa-circle-exclamation mr-1"></i>{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <div class="space-y-1">
+        <label for="{{ form.username.id_for_label }}" class="block text-xs font-bold text-slate-700">
+          Логин
+        </label>
+        {{ form.username }}
+        {% if form.username.errors %}
+          <p class="text-xs text-rose-600 font-medium">{{ form.username.errors.0 }}</p>
+        {% endif %}
+      </div>
+
+      <div class="space-y-1">
+        <label for="{{ form.password.id_for_label }}" class="block text-xs font-bold text-slate-700">
+          Пароль
+        </label>
+        {{ form.password }}
+        {% if form.password.errors %}
+          <p class="text-xs text-rose-600 font-medium">{{ form.password.errors.0 }}</p>
+        {% endif %}
+      </div>
+
+      <button type="submit" class="w-full py-3 rounded-xl font-bold text-sm text-white pylearn-btn shadow-md hover:shadow-lg transition-all mt-2">
+        Войти в аккаунт
+      </button>
+    </form>
+
+    <div class="pt-4 border-t border-slate-100 space-y-3 text-center">
+      <div class="relative flex py-1 items-center">
+        <div class="flex-grow border-t border-slate-200"></div>
+        <span class="flex-shrink mx-3 text-slate-400 text-[11px] uppercase font-bold tracking-wider">или</span>
+        <div class="flex-grow border-t border-slate-200"></div>
+      </div>
+
+      <a href="{% url 'demo_login' %}{% if next %}?next={{ next }}{% endif %}" class="w-full py-2.5 rounded-xl font-bold text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center space-x-2 transition-colors">
+        <i class="fa-solid fa-bolt text-amber-500"></i>
+        <span>Мгновенный вход в тестовый аккаунт</span>
+      </a>
+
+      <p class="text-xs text-slate-500 pt-2">
+        Еще нет аккаунта?
+        <a href="{% url 'register' %}" class="font-bold text-sky-600 hover:text-sky-700 ml-1">
+          Зарегистрироваться
+        </a>
+      </p>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

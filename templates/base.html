@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}PyLearn — Интерактивный портал изучения Python{% endblock %}</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Manrope', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              700: '#0369a1',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Manrope', sans-serif;
+      background-color: #f8fafc;
+      color: #1e293b;
+    }
+    .code-font {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .pylearn-pill {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      border: 1px solid #e2e8f0;
+    }
+    .pylearn-btn {
+      background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .pylearn-btn:hover {
+      box-shadow: 0 4px 14px rgba(14, 165, 233, 0.4);
+      transform: translateY(-1px);
+    }
+    .streak-badge {
+      background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+      border: 1px solid #fed7aa;
+      color: #ea580c;
+    }
+    .xp-badge {
+      background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%);
+      border: 1px solid #fef08a;
+      color: #ca8a04;
+    }
+    .level-badge {
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      border: 1px solid #bfdbfe;
+      color: #2563eb;
+    }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="min-h-screen flex flex-col bg-slate-50 antialiased selection:bg-sky-500 selection:text-white">
+
+  <nav class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <div class="flex items-center space-x-6">
+          <a href="{% url 'home' %}" class="flex items-center space-x-2.5 group">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-sky-500/20 group-hover:scale-105 transition-transform">
+              <i class="fa-brands fa-python text-xl"></i>
+            </div>
+            <div>
+              <div class="font-extrabold text-lg tracking-tight text-slate-900 group-hover:text-sky-600 transition-colors">
+                PyLearn<span class="text-sky-500">.io</span>
+              </div>
+              <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                Практика Python
+              </div>
+            </div>
+          </a>
+
+          <div class="hidden md:flex items-center space-x-1">
+            <a href="{% url 'home' %}" class="px-3 py-2 rounded-xl text-sm font-semibold transition-colors {% if request.resolver_match.url_name == 'home' %}text-sky-600 bg-sky-50{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-100{% endif %}">
+              <i class="fa-solid fa-compass mr-1.5 opacity-70"></i>Обзор
+            </a>
+            <a href="{% url 'task_list' %}" class="px-3 py-2 rounded-xl text-sm font-semibold transition-colors {% if request.resolver_match.url_name in 'task_list,task_detail' %}text-sky-600 bg-sky-50{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-100{% endif %}">
+              <i class="fa-solid fa-terminal mr-1.5 opacity-70"></i>Тренажер задач
+            </a>
+            <a href="{% url 'courses_list' %}" class="px-3 py-2 rounded-xl text-sm font-semibold transition-colors {% if 'courses' in request.resolver_match.url_name %}text-sky-600 bg-sky-50{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-100{% endif %}">
+              <i class="fa-solid fa-graduation-cap mr-1.5 opacity-70"></i>Курсы
+            </a>
+            <a href="{% url 'playground' %}" class="px-3 py-2 rounded-xl text-sm font-semibold transition-colors {% if request.resolver_match.url_name == 'playground' %}text-sky-600 bg-sky-50{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-100{% endif %}">
+              <i class="fa-solid fa-laptop-code mr-1.5 opacity-70"></i>Песочница
+            </a>
+            <a href="{% url 'leaderboard' %}" class="px-3 py-2 rounded-xl text-sm font-semibold transition-colors {% if request.resolver_match.url_name == 'leaderboard' %}text-sky-600 bg-sky-50{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-100{% endif %}">
+              <i class="fa-solid fa-trophy mr-1.5 opacity-70"></i>Лидеры
+            </a>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-3">
+          
+          <div class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full streak-badge text-xs font-bold shadow-xs" title="Дней ударного режима подряд">
+            <i class="fa-solid fa-fire text-orange-500 animate-pulse"></i>
+            <span>{{ user_streak }}</span>
+          </div>
+
+          <div class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full xp-badge text-xs font-bold shadow-xs" title="Накопленные очки опыта">
+            <i class="fa-solid fa-bolt text-yellow-500"></i>
+            <span>{{ user_xp }} XP</span>
+          </div>
+
+          <div class="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-full level-badge text-xs font-bold shadow-xs" title="Текущий ранг">
+            <i class="fa-solid fa-shield text-blue-500"></i>
+            <span>Lvl {{ user_level }}</span>
+          </div>
+
+          {% if user.is_authenticated %}
+            <div class="flex items-center space-x-2 pl-2 border-l border-slate-200">
+              <a href="{% url 'profile' %}" class="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-sky-400 to-indigo-500 text-white font-bold text-xs flex items-center justify-center ring-2 ring-white shadow-xs">
+                  {{ user.username|slice:":1"|upper }}
+                </div>
+                <span class="hidden lg:inline text-xs font-semibold text-slate-700">
+                  {{ user.first_name|default:user.username }}
+                </span>
+              </a>
+              <a href="{% url 'logout' %}" class="text-xs text-slate-400 hover:text-rose-600 p-1.5 transition-colors" title="Выйти">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+              </a>
+            </div>
+          {% else %}
+            <div class="flex items-center space-x-2">
+              <a href="{% url 'login' %}?next={{ request.path }}" class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-700 hover:text-sky-600 hover:bg-slate-100 transition-colors">
+                Войти
+              </a>
+              <a href="{% url 'register' %}" class="inline-flex items-center px-4 py-1.5 rounded-xl text-xs font-bold text-white pylearn-btn shadow-xs">
+                Регистрация
+              </a>
+            </div>
+          {% endif %}
+
+        </div>
+
+      </div>
+    </div>
+  </nav>
+
+  {% if messages %}
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 w-full">
+      {% for message in messages %}
+        <div class="p-3.5 rounded-xl text-sm font-medium flex items-center space-x-2 {% if message.tags == 'error' %}bg-rose-50 text-rose-700 border border-rose-200{% elif message.tags == 'info' %}bg-sky-50 text-sky-700 border border-sky-200{% else %}bg-emerald-50 text-emerald-700 border border-emerald-200{% endif %}">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>{{ message }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <main class="flex-grow">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="bg-white border-t border-slate-200 py-8 text-slate-500 text-xs mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
+      <div class="flex items-center space-x-3">
+        <div class="w-6 h-6 rounded-lg bg-sky-500 flex items-center justify-center text-white text-[10px]">
+          <i class="fa-brands fa-python"></i>
+        </div>
+        <p class="font-medium text-slate-600">
+          PyLearn — Интерактивный портал практического изучения Python с автоматической проверкой кода.
+        </p>
+      </div>
+      <div class="flex items-center space-x-6 text-slate-400">
+        <span>Платформа интерактивного обучения и практики кода</span>
+        <span>•</span>
+        <span>Django 6 + Python 3.13 Sandbox</span>
+      </div>
+    </div>
+  </footer>
+
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>
