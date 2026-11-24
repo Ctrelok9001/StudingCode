@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -38,6 +39,20 @@ class Category(models.Model):
         return f"{self.language.name} - {self.name}"
 
 
+class Tag(models.Model):
+    name = models.CharField(max_length=50, unique=True, verbose_name="Название тега")
+    slug = models.SlugField(max_length=50, unique=True)
+    color = models.CharField(max_length=30, default="sky", verbose_name="Цветовая схема")
+
+    class Meta:
+        verbose_name = "Тег темы"
+        verbose_name_plural = "Теги тем"
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
 class Task(models.Model):
     DIFFICULTY_CHOICES = [
         ('easy', 'Легкий (Easy)'),
@@ -47,6 +62,7 @@ class Task(models.Model):
 
     language = models.ForeignKey(Language, on_delete=models.CASCADE, related_name='tasks', verbose_name="Язык")
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='tasks', verbose_name="Категория")
+    tags = models.ManyToManyField(Tag, blank=True, related_name='tasks', verbose_name="Теги темы")
     number = models.PositiveIntegerField(default=1, verbose_name="Номер задачи")
     title = models.CharField(max_length=200, verbose_name="Заголовок")
     slug = models.SlugField(max_length=200, unique=True)
@@ -67,6 +83,22 @@ class Task(models.Model):
 
     def __str__(self):
         return f"№{self.number}. {self.title} ({self.get_difficulty_display()})"
+
+    @property
+    def total_submissions_count(self):
+        return self.submissions.count()
+
+    @property
+    def accepted_submissions_count(self):
+        return self.submissions.filter(status='accepted').count()
+
+    @property
+    def acceptance_rate(self):
+        total = self.total_submissions_count
+        if total == 0:
+            return 100.0
+        accepted = self.accepted_submissions_count
+        return round((accepted / total) * 100, 1)
 
 
 class TestCase(models.Model):
@@ -92,6 +124,7 @@ class Submission(models.Model):
         ('wrong_answer', 'Неверный ответ (Wrong Answer)'),
         ('syntax_error', 'Синтаксическая ошибка (Syntax Error)'),
         ('runtime_error', 'Ошибка выполнения (Runtime Error)'),
+        ('security_error', 'Заблокировано (Security Error)'),
         ('timeout', 'Превышен лимит времени (Time Limit)'),
     ]
 
@@ -113,6 +146,20 @@ class Submission(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.task.title} [{self.get_status_display()}]"
+
+
+class TaskHintUnlock(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='unlocked_hints', verbose_name="Пользователь")
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='unlocked_hints', verbose_name="Задача")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Время разблокировки")
+
+    class Meta:
+        verbose_name = "Разблокированная подсказка"
+        verbose_name_plural = "Разблокированные подсказки"
+        unique_together = ('user', 'task')
+
+    def __str__(self):
+        return f"{self.user.username} -> {self.task.title}"
 
 
 class Course(models.Model):
@@ -139,6 +186,15 @@ class Course(models.Model):
 
     def __str__(self):
         return self.title
+
+    def is_completed_by(self, user):
+        if not user or not user.is_authenticated:
+            return False
+        lesson_ids = list(Lesson.objects.filter(module__course=self).values_list('id', flat=True))
+        if not lesson_ids:
+            return False
+        completed_count = LessonProgress.objects.filter(user=user, lesson_id__in=lesson_ids, completed=True).count()
+        return completed_count >= len(lesson_ids)
 
 
 class Module(models.Model):
@@ -173,6 +229,68 @@ class Lesson(models.Model):
 
     def __str__(self):
         return f"{self.module.title} - {self.title}"
+
+
+class QuizQuestion(models.Model):
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='quiz_questions', verbose_name="Урок")
+    question = models.TextField(verbose_name="Текст вопроса")
+    explanation = models.TextField(blank=True, verbose_name="Объяснение правильного ответа")
+    order = models.PositiveIntegerField(default=0, verbose_name="Порядок")
+    xp_reward = models.PositiveIntegerField(default=5, verbose_name="Награда (XP)")
+
+    class Meta:
+        verbose_name = "Вопрос квиза"
+        verbose_name_plural = "Вопросы квиза"
+        ordering = ['order', 'id']
+
+    def __str__(self):
+        return f"{self.lesson.title}: {self.question[:50]}"
+
+
+class QuizOption(models.Model):
+    question = models.ForeignKey(QuizQuestion, on_delete=models.CASCADE, related_name='options', verbose_name="Вопрос")
+    text = models.CharField(max_length=255, verbose_name="Вариант ответа")
+    is_correct = models.BooleanField(default=False, verbose_name="Правильный ответ")
+    order = models.PositiveIntegerField(default=0, verbose_name="Порядок")
+
+    class Meta:
+        verbose_name = "Вариант ответа"
+        verbose_name_plural = "Варианты ответа"
+        ordering = ['order', 'id']
+
+    def __str__(self):
+        correct_mark = " (Верно)" if self.is_correct else ""
+        return f"{self.text}{correct_mark}"
+
+
+class UserQuizAttempt(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='quiz_attempts', verbose_name="Пользователь")
+    question = models.ForeignKey(QuizQuestion, on_delete=models.CASCADE, verbose_name="Вопрос")
+    is_passed = models.BooleanField(default=False, verbose_name="Пройден")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Время прохождения")
+
+    class Meta:
+        verbose_name = "Попытка прохождения квиза"
+        verbose_name_plural = "Попытки прохождения квиза"
+        unique_together = ('user', 'question')
+
+    def __str__(self):
+        return f"{self.user.username} -> {self.question_id}"
+
+
+class CourseCertificate(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='certificates', verbose_name="Пользователь")
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='certificates', verbose_name="Курс")
+    certificate_code = models.CharField(max_length=40, unique=True, verbose_name="Код сертификата")
+    issued_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата выдачи")
+
+    class Meta:
+        verbose_name = "Сертификат курса"
+        verbose_name_plural = "Сертификаты курсов"
+        unique_together = ('user', 'course')
+
+    def __str__(self):
+        return f"Сертификат {self.certificate_code} ({self.user.username} - {self.course.title})"
 
 
 class LessonProgress(models.Model):

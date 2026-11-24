@@ -9,9 +9,18 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
+  <script>
+    if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           fontFamily: {
@@ -33,21 +42,17 @@
   </script>
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 
   <style>
     body {
       font-family: 'Manrope', sans-serif;
       background-color: #f8fafc;
       color: #1e293b;
+      transition: background-color 0.2s ease, color 0.2s ease;
     }
     .code-font {
       font-family: 'JetBrains Mono', monospace;
-    }
-    .pylearn-pill {
-      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-      border: 1px solid #e2e8f0;
     }
     .pylearn-btn {
       background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
@@ -71,6 +76,46 @@
       background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
       border: 1px solid #bfdbfe;
       color: #2563eb;
+    }
+
+    html.dark body {
+      background-color: #0b0f19;
+      color: #f1f5f9;
+    }
+    html.dark nav {
+      background-color: rgba(11, 15, 25, 0.92);
+      border-color: #1e293b;
+    }
+    html.dark .bg-white {
+      background-color: #131b2e !important;
+      color: #f1f5f9;
+    }
+    html.dark .border-slate-200,
+    html.dark .border-slate-100 {
+      border-color: #1e293b !important;
+    }
+    html.dark .text-slate-900,
+    html.dark .text-slate-800 {
+      color: #f8fafc !important;
+    }
+    html.dark .text-slate-700,
+    html.dark .text-slate-600 {
+      color: #cbd5e1 !important;
+    }
+    html.dark .text-slate-500,
+    html.dark .text-slate-400 {
+      color: #94a3b8 !important;
+    }
+    html.dark .bg-slate-50 {
+      background-color: #0f172a !important;
+    }
+    html.dark .bg-slate-100 {
+      background-color: #1e293b !important;
+      color: #f1f5f9 !important;
+    }
+    html.dark footer {
+      background-color: #0f172a !important;
+      border-color: #1e293b !important;
     }
   </style>
   {% block extra_head %}{% endblock %}
@@ -103,7 +148,7 @@
             <a href="{% url 'task_list' %}" class="px-3 py-2 rounded-xl text-sm font-semibold transition-colors {% if request.resolver_match.url_name in 'task_list,task_detail' %}text-sky-600 bg-sky-50{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-100{% endif %}">
               <i class="fa-solid fa-terminal mr-1.5 opacity-70"></i>Тренажер задач
             </a>
-            <a href="{% url 'courses_list' %}" class="px-3 py-2 rounded-xl text-sm font-semibold transition-colors {% if 'courses' in request.resolver_match.url_name %}text-sky-600 bg-sky-50{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-100{% endif %}">
+            <a href="{% url 'courses_list' %}" class="px-3 py-2 rounded-xl text-sm font-semibold transition-colors {% if 'course' in request.resolver_match.url_name or 'lesson' in request.resolver_match.url_name %}text-sky-600 bg-sky-50{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-100{% endif %}">
               <i class="fa-solid fa-graduation-cap mr-1.5 opacity-70"></i>Курсы
             </a>
             <a href="{% url 'playground' %}" class="px-3 py-2 rounded-xl text-sm font-semibold transition-colors {% if request.resolver_match.url_name == 'playground' %}text-sky-600 bg-sky-50{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-100{% endif %}">
@@ -117,12 +162,17 @@
 
         <div class="flex items-center space-x-3">
           
+          <button type="button" id="themeToggleBtn" class="w-9 h-9 rounded-xl flex items-center justify-center text-slate-500 hover:text-amber-500 hover:bg-slate-100 transition-colors" title="Переключить тему оформления">
+            <i class="fa-solid fa-moon text-sm dark:hidden"></i>
+            <i class="fa-solid fa-sun text-sm hidden dark:inline text-amber-400"></i>
+          </button>
+
           <div class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full streak-badge text-xs font-bold shadow-xs" title="Дней ударного режима подряд">
             <i class="fa-solid fa-fire text-orange-500 animate-pulse"></i>
             <span>{{ user_streak }}</span>
           </div>
 
-          <div class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full xp-badge text-xs font-bold shadow-xs" title="Накопленные очки опыта">
+          <div class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full xp-badge text-xs font-bold shadow-xs user-xp-badge" title="Накопленные очки опыта">
             <i class="fa-solid fa-bolt text-yellow-500"></i>
             <span>{{ user_xp }} XP</span>
           </div>
@@ -195,6 +245,16 @@
       </div>
     </div>
   </footer>
+
+  <script>
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener('click', () => {
+        const isDark = document.documentElement.classList.toggle('dark');
+        localStorage.theme = isDark ? 'dark' : 'light';
+      });
+    }
+  </script>
 
   {% block extra_scripts %}{% endblock %}
 </body>

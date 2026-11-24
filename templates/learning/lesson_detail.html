@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ lesson.title }} — {{ course.title }}{% endblock %}
+{% block title %}Урок {{ lesson.order }}: {{ lesson.title }} — PyLearn{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
@@ -11,22 +11,81 @@
     <span>/</span>
     <span class="text-slate-700">{{ lesson.module.title }}</span>
   </div>
-  <div class="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200/80 shadow-sm space-y-6">
+
+  <div class="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200/80 shadow-sm space-y-8">
     <div class="flex items-center justify-between border-b border-slate-100 pb-4">
       <span class="px-3 py-1 rounded-full text-xs font-bold bg-sky-50 text-sky-700">
         Урок {{ lesson.order }}
       </span>
       <span class="font-mono text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-xl">
-        +{{ lesson.xp_reward }} XP
+        +{{ lesson.xp_reward }} XP за прочтение
       </span>
     </div>
 
-    <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-      {{ lesson.title }}
-    </h1>
+    <div class="space-y-3">
+      <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+        {{ lesson.title }}
+      </h1>
+    </div>
+
     <div class="prose prose-slate max-w-none text-sm text-slate-700 leading-relaxed space-y-4">
       {{ lesson.content|linebreaks }}
     </div>
+
+    {% if quiz_questions %}
+      <div class="space-y-4 pt-6 border-t border-slate-100">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-sm font-bold">
+              <i class="fa-solid fa-circle-question"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-extrabold text-slate-900">Проверка понимания (Мини-квиз)</h3>
+              <p class="text-[11px] text-slate-500">Ответьте на вопросы по теме урока, чтобы закрепить материал и получить бонусный опыт</p>
+            </div>
+          </div>
+          <span class="text-xs font-mono font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-xl">+5 XP за верный ответ</span>
+        </div>
+
+        <div class="space-y-4">
+          {% for q in quiz_questions %}
+            <div class="p-5 rounded-2xl border border-slate-200/80 bg-slate-50 space-y-3" id="quiz-card-{{ q.id }}" data-question-id="{{ q.id }}">
+              <div class="flex items-start justify-between gap-4">
+                <span class="font-extrabold text-xs text-slate-800">
+                  {{ forloop.counter }}. {{ q.question }}
+                </span>
+                {% if q.id in passed_quiz_ids %}
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 shrink-0">
+                    <i class="fa-solid fa-check mr-1"></i>Пройдено
+                  </span>
+                {% endif %}
+              </div>
+
+              <div class="space-y-2">
+                {% for opt in q.options.all %}
+                  <label class="flex items-center space-x-3 p-3 rounded-xl bg-white border border-slate-200 cursor-pointer hover:border-sky-300 hover:bg-sky-50/30 transition-all text-xs font-medium text-slate-700">
+                    <input type="radio" name="quiz_opt_{{ q.id }}" value="{{ opt.id }}" class="text-sky-600 focus:ring-sky-500">
+                    <span>{{ opt.text }}</span>
+                  </label>
+                {% endfor %}
+              </div>
+
+              <div class="flex items-center justify-between pt-1">
+                <button type="button" class="btn-check-quiz px-4 py-2 rounded-xl text-xs font-bold text-white pylearn-btn shadow-sm" data-question-id="{{ q.id }}">
+                  Проверить ответ
+                </button>
+                <div class="quiz-feedback-{{ q.id }} hidden text-xs font-bold"></div>
+              </div>
+
+              <div class="quiz-explanation-{{ q.id }} hidden p-3 rounded-xl bg-sky-50 border border-sky-100 text-xs text-sky-900 leading-relaxed font-mono">
+                {{ q.explanation }}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
     {% if lesson.task %}
       <div class="p-5 rounded-2xl bg-gradient-to-r from-sky-50 to-indigo-50 border border-sky-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div class="space-y-1">
@@ -46,6 +105,7 @@
         </a>
       </div>
     {% endif %}
+
     <div class="pt-6 border-t border-slate-100 flex items-center justify-between">
       {% if prev_lesson %}
         <a href="{% url 'lesson_detail' course.slug prev_lesson.slug %}" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
@@ -61,12 +121,81 @@
         </a>
       {% else %}
         <a href="{% url 'course_detail' course.slug %}" class="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-xs">
-          Завершить курс 🎉
+          Завершить курс
         </a>
       {% endif %}
     </div>
 
   </div>
-
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+  const csrftoken = getCookie('csrftoken');
+
+  document.querySelectorAll('.btn-check-quiz').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      const qId = this.getAttribute('data-question-id');
+      const selectedRadio = document.querySelector(`input[name="quiz_opt_${qId}"]:checked`);
+      const feedbackEl = document.querySelector(`.quiz-feedback-${qId}`);
+      const explEl = document.querySelector(`.quiz-explanation-${qId}`);
+
+      if (!selectedRadio) {
+        alert('Пожалуйста, выберите вариант ответа!');
+        return;
+      }
+
+      const optId = selectedRadio.value;
+
+      try {
+        const resp = await fetch('{% url "api_check_quiz" %}', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+          },
+          body: JSON.stringify({
+            question_id: parseInt(qId),
+            option_id: parseInt(optId)
+          })
+        });
+        const data = await resp.json();
+
+        feedbackEl.classList.remove('hidden');
+
+        if (data.is_correct) {
+          feedbackEl.className = `quiz-feedback-${qId} text-xs font-bold text-emerald-600 flex items-center space-x-1`;
+          feedbackEl.innerHTML = `<i class="fa-solid fa-circle-check"></i><span>Верно! ${data.xp_gained ? `+${data.xp_gained} XP` : ''}</span>`;
+          if (explEl) {
+            explEl.classList.remove('hidden');
+          }
+          const xpBadge = document.querySelector('.user-xp-badge');
+          if (xpBadge && data.user_xp) {
+            xpBadge.textContent = `${data.user_xp} XP`;
+          }
+        } else {
+          feedbackEl.className = `quiz-feedback-${qId} text-xs font-bold text-rose-600 flex items-center space-x-1`;
+          feedbackEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i><span>Неверно, попробуйте другой вариант</span>`;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    });
+  });
+</script>
 {% endblock %}

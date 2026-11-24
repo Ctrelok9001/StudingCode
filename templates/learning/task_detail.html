@@ -40,6 +40,23 @@
     resize: vertical;
     border-radius: 0 0 1rem 1rem;
   }
+  #editorWrapper.zen-mode {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 9999 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  #editorWrapper.zen-mode #editor,
+  #editorWrapper.zen-mode #fallbackTextarea {
+    height: calc(100vh - 120px) !important;
+    flex: 1 1 auto;
+  }
 </style>
 {% endblock %}
 
@@ -100,41 +117,41 @@
               <span>+{{ task.xp_reward }} XP</span>
             </span>
             {% if is_solved %}
-              <span class="px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-100 text-emerald-700 flex items-center space-x-1">
-                <i class="fa-solid fa-check"></i>
+              <span class="px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-bold flex items-center space-x-1 border border-emerald-200">
+                <i class="fa-solid fa-circle-check text-emerald-600"></i>
                 <span>Решено</span>
               </span>
             {% endif %}
           </div>
         </div>
 
-        <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">
-          {{ task.title }}
-        </h1>
-
-        <div class="text-sm text-slate-700 leading-relaxed space-y-3 prose prose-slate max-w-none">
-          {{ task.description|linebreaksbr }}
+        <div>
+          <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">{{ task.title }}</h2>
+          <div class="mt-2 text-xs text-slate-600 leading-relaxed space-y-2 whitespace-pre-line">
+            {{ task.description }}
+          </div>
         </div>
 
         {% if task.input_format or task.output_format %}
-          <div class="pt-4 border-t border-slate-100 space-y-3">
+          <div class="space-y-3 pt-3 border-t border-slate-100">
             {% if task.input_format %}
               <div>
-                <h4 class="text-xs font-bold uppercase text-slate-400 tracking-wider">Формат входных данных:</h4>
-                <p class="text-xs text-slate-700 mt-1 font-mono bg-slate-50 p-2.5 rounded-xl border border-slate-100">{{ task.input_format }}</p>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">Формат входных данных</span>
+                <p class="text-xs text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-100 font-mono">{{ task.input_format }}</p>
               </div>
             {% endif %}
+
             {% if task.output_format %}
               <div>
-                <h4 class="text-xs font-bold uppercase text-slate-400 tracking-wider">Формат выходных данных:</h4>
-                <p class="text-xs text-slate-700 mt-1 font-mono bg-slate-50 p-2.5 rounded-xl border border-slate-100">{{ task.output_format }}</p>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">Формат выходных данных</span>
+                <p class="text-xs text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-100 font-mono">{{ task.output_format }}</p>
               </div>
             {% endif %}
           </div>
         {% endif %}
 
-        <div class="pt-4 border-t border-slate-100 space-y-3">
-          <h4 class="text-xs font-bold uppercase text-slate-400 tracking-wider flex items-center justify-between">
+        <div class="space-y-3 pt-3 border-t border-slate-100">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
             <span>Примеры тестов ({{ visible_tests.count }})</span>
             {% if hidden_tests_count %}
               <span class="text-[10px] text-slate-400 lowercase font-normal">(+{{ hidden_tests_count }} скрытых проверок)</span>
@@ -162,19 +179,41 @@
         </div>
 
         {% if task.hints %}
-          <div class="pt-3 border-t border-slate-100">
-            <details class="group bg-amber-50/60 rounded-2xl border border-amber-200/80 p-3.5 transition-all">
-              <summary class="flex items-center justify-between cursor-pointer text-xs font-bold text-amber-800 list-none">
-                <span class="flex items-center space-x-2">
+          <div class="pt-3 border-t border-slate-100" id="hintSection">
+            {% if is_hint_unlocked %}
+              <div class="bg-amber-50/70 rounded-2xl border border-amber-200 p-4 space-y-2">
+                <div class="flex items-center space-x-2 text-xs font-bold text-amber-800">
                   <i class="fa-solid fa-lightbulb text-amber-500"></i>
-                  <span>Нужна подсказка? (Нажмите, чтобы открыть)</span>
-                </span>
-                <i class="fa-solid fa-chevron-down group-open:rotate-180 transition-transform text-[10px]"></i>
-              </summary>
-              <div class="mt-2 text-xs text-amber-900 leading-relaxed font-mono bg-white p-3 rounded-xl border border-amber-100">
-                {{ task.hints }}
+                  <span>Подсказка к решению:</span>
+                </div>
+                <div class="text-xs text-amber-950 font-mono bg-white p-3 rounded-xl border border-amber-100 whitespace-pre-wrap">
+                  {{ task.hints }}
+                </div>
               </div>
-            </details>
+            {% else %}
+              <div class="bg-amber-50/60 rounded-2xl border border-amber-200/80 p-4 space-y-3" id="hintLockedBox">
+                <div class="flex items-start justify-between">
+                  <div class="flex items-center space-x-2 text-xs font-bold text-amber-900">
+                    <i class="fa-solid fa-lightbulb text-amber-500 text-sm"></i>
+                    <span>Застряли над решением?</span>
+                  </div>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-mono">-5 XP</span>
+                </div>
+                <p class="text-xs text-amber-800 leading-relaxed">Вы можете открыть подсказку от автора задачи. За просмотр подсказки спишется 5 XP.</p>
+                <button type="button" id="btnUnlockHint" class="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white flex items-center justify-center space-x-2 shadow-sm transition-all hover:scale-[1.01]">
+                  <i class="fa-solid fa-key"></i>
+                  <span>Открыть подсказку (-5 XP)</span>
+                </button>
+              </div>
+
+              <div class="hidden bg-amber-50/70 rounded-2xl border border-amber-200 p-4 space-y-2" id="hintUnlockedBox">
+                <div class="flex items-center space-x-2 text-xs font-bold text-amber-800">
+                  <i class="fa-solid fa-lightbulb text-amber-500"></i>
+                  <span>Подсказка к решению:</span>
+                </div>
+                <div class="text-xs text-amber-950 font-mono bg-white p-3 rounded-xl border border-amber-100 whitespace-pre-wrap" id="hintUnlockedText"></div>
+              </div>
+            {% endif %}
           </div>
         {% endif %}
 
@@ -195,42 +234,11 @@
 
       </div>
 
-      {% if past_submissions %}
-        <div class="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-sm space-y-3">
-          <h3 class="font-extrabold text-xs uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
-            <i class="fa-solid fa-clock-rotate-left"></i>
-            <span>История ваших посылок</span>
-          </h3>
-          <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
-            {% for sub in past_submissions %}
-              <div class="p-2.5 rounded-xl border border-slate-100 flex items-center justify-between text-xs {% if sub.status == 'accepted' %}bg-emerald-50/50{% else %}bg-slate-50{% endif %}">
-                <div class="flex items-center space-x-2">
-                  {% if sub.status == 'accepted' %}
-                    <i class="fa-solid fa-check text-emerald-500"></i>
-                    <span class="font-bold text-emerald-700">Accepted</span>
-                  {% elif sub.status == 'wrong_answer' %}
-                    <i class="fa-solid fa-xmark text-rose-500"></i>
-                    <span class="font-bold text-rose-700">Wrong Answer</span>
-                  {% else %}
-                    <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
-                    <span class="font-bold text-amber-700">{{ sub.get_status_display }}</span>
-                  {% endif %}
-                  <span class="text-slate-400 font-mono">({{ sub.tests_passed }}/{{ sub.tests_total }})</span>
-                </div>
-                <div class="text-slate-400 text-[11px] font-mono">
-                  {{ sub.created_at|date:"d.m H:i" }}
-                </div>
-              </div>
-            {% endfor %}
-          </div>
-        </div>
-      {% endif %}
-
     </div>
 
     <div class="lg:col-span-7 space-y-4">
       
-      <div class="bg-slate-900 rounded-3xl shadow-xl border border-slate-800 overflow-hidden flex flex-col">
+      <div id="editorWrapper" class="bg-slate-900 rounded-3xl shadow-xl border border-slate-800 overflow-hidden flex flex-col">
         
         <div class="px-5 py-3 bg-slate-800/90 border-b border-slate-700 flex items-center justify-between text-xs">
           <div class="flex items-center space-x-3">
@@ -252,8 +260,19 @@
               <option value="ace/theme/chrome">Светлая (Chrome)</option>
             </select>
 
-            <button type="button" id="btnResetCode" class="hover:text-white transition-colors text-slate-300" title="Сбросить к исходному шаблону">
-              <i class="fa-solid fa-rotate-left mr-1"></i>Сбросить
+            <button type="button" id="btnFormatCode" class="hover:text-white transition-colors text-slate-300 flex items-center space-x-1" title="Автоформатирование кода (PEP 8)">
+              <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i>
+              <span>Формат</span>
+            </button>
+
+            <button type="button" id="btnZenMode" class="hover:text-white transition-colors text-slate-300 flex items-center space-x-1" title="Полноэкранный режим (Zen Mode)">
+              <i class="fa-solid fa-expand text-sky-400"></i>
+              <span id="zenModeText">Zen</span>
+            </button>
+
+            <button type="button" id="btnResetCode" class="hover:text-white transition-colors text-slate-300 flex items-center space-x-1" title="Сбросить к исходному шаблону">
+              <i class="fa-solid fa-rotate-left"></i>
+              <span>Сбросить</span>
             </button>
           </div>
         </div>
@@ -272,6 +291,9 @@
           </div>
 
           <div class="flex items-center space-x-3">
+            <span class="text-[11px] text-slate-400 font-mono hidden sm:inline">
+              <kbd class="px-1.5 py-0.5 rounded bg-slate-700 text-slate-300 text-[10px]">Ctrl</kbd> + <kbd class="px-1.5 py-0.5 rounded bg-slate-700 text-slate-300 text-[10px]">Enter</kbd>
+            </span>
             <button type="button" id="btnSubmitSolution" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white pylearn-btn flex items-center space-x-2 shadow-md hover:scale-105 transition-all">
               <i class="fa-solid fa-cloud-arrow-up"></i>
               <span>Проверить решение</span>
@@ -283,8 +305,8 @@
 
       <div id="judgePanel" class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
         
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-          <div class="flex space-x-2 text-xs font-bold">
+        <div class="flex flex-wrap items-center justify-between border-b border-slate-100 pb-3 gap-2">
+          <div class="flex flex-wrap gap-2 text-xs font-bold">
             <button type="button" id="tabTestsBtn" class="px-3.5 py-1.5 rounded-xl bg-sky-50 text-sky-700 border border-sky-200 flex items-center space-x-1.5">
               <i class="fa-solid fa-list-check"></i>
               <span>Результаты проверки</span>
@@ -297,18 +319,26 @@
               <i class="fa-solid fa-terminal"></i>
               <span>Консоль</span>
             </button>
+            <button type="button" id="tabHistoryBtn" class="px-3.5 py-1.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center space-x-1.5">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+              <span>История решений</span>
+            </button>
+            <button type="button" id="tabCommunityBtn" class="px-3.5 py-1.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center space-x-1.5">
+              <i class="fa-solid fa-users"></i>
+              <span>Решения сообщества</span>
+            </button>
           </div>
 
           <div id="judgeSpinner" class="hidden flex items-center space-x-2 text-xs font-bold text-sky-600">
             <i class="fa-solid fa-circle-notch fa-spin"></i>
-            <span>Исполнение в изолированной песочнице...</span>
+            <span>Исполнение в песочнице...</span>
           </div>
         </div>
 
         <div id="tabTestsContent" class="space-y-4">
           <div id="statusBanner" class="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-600 flex items-center space-x-3">
             <i class="fa-solid fa-circle-info text-sky-500 text-sm"></i>
-            <span>Нажмите «Проверить решение» для запуска автоматических проверочных тестов.</span>
+            <span>Нажмите «Проверить решение» (или Ctrl+Enter) для запуска автоматических проверочных тестов.</span>
           </div>
 
           <div id="testCardsContainer" class="space-y-2.5">
@@ -323,7 +353,88 @@
 
         <div id="tabConsoleContent" class="hidden space-y-2">
           <label class="block text-xs font-bold text-slate-500 uppercase">Сырой вывод консоли:</label>
-          <pre id="rawConsoleOutput" class="w-full min-h-[100px] p-4 rounded-2xl bg-slate-900 text-emerald-400 text-xs font-mono overflow-x-auto whitespace-pre-wrap">(Пока нет вывода)</pre>
+          <pre id="rawConsoleOutput" class="w-full min-h-[120px] p-4 rounded-2xl bg-slate-900 text-emerald-400 text-xs font-mono overflow-x-auto whitespace-pre-wrap">(Пока нет вывода)</pre>
+        </div>
+
+        <div id="tabHistoryContent" class="hidden space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-500 uppercase">Все ваши отправки по этой задаче:</span>
+            <span class="text-[11px] text-slate-400 font-mono">Нажмите «В редактор», чтобы вернуть код</span>
+          </div>
+
+          <div id="historyListContainer" class="space-y-2 max-h-96 overflow-y-auto pr-1">
+            {% if past_submissions %}
+              {% for sub in past_submissions %}
+                <div class="p-3 rounded-2xl border border-slate-200/80 {% if sub.status == 'accepted' %}bg-emerald-50/40{% else %}bg-slate-50{% endif %} space-y-2">
+                  <div class="flex items-center justify-between text-xs">
+                    <div class="flex items-center space-x-2 font-bold">
+                      {% if sub.status == 'accepted' %}
+                        <i class="fa-solid fa-circle-check text-emerald-600"></i>
+                        <span class="text-emerald-700">Accepted</span>
+                      {% elif sub.status == 'wrong_answer' %}
+                        <i class="fa-solid fa-circle-xmark text-rose-600"></i>
+                        <span class="text-rose-700">Wrong Answer</span>
+                      {% elif sub.status == 'security_error' %}
+                        <i class="fa-solid fa-shield-halved text-amber-600"></i>
+                        <span class="text-amber-700">Security Error</span>
+                      {% else %}
+                        <i class="fa-solid fa-triangle-exclamation text-amber-600"></i>
+                        <span class="text-amber-700">{{ sub.get_status_display }}</span>
+                      {% endif %}
+                      <span class="text-slate-400 font-mono text-[11px]">({{ sub.tests_passed }}/{{ sub.tests_total }} тестов)</span>
+                      <span class="text-slate-300">•</span>
+                      <span class="text-slate-400 font-mono text-[11px]">{{ sub.execution_time_ms }} мс</span>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                      <span class="text-[11px] font-mono text-slate-400">{{ sub.created_at|date:"d.m.Y H:i" }}</span>
+                      <button type="button" class="btn-restore-code px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white hover:bg-sky-50 text-sky-700 border border-slate-200 shadow-xs transition-colors flex items-center space-x-1" data-code="{{ sub.code|escape }}">
+                        <i class="fa-solid fa-arrow-rotate-left"></i>
+                        <span>В редактор</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <details class="text-xs">
+                    <summary class="cursor-pointer text-[11px] font-semibold text-slate-500 hover:text-slate-800">Показать исходный код посылки</summary>
+                    <pre class="mt-2 p-2.5 bg-slate-900 text-slate-100 rounded-xl font-mono text-[11px] overflow-x-auto whitespace-pre">{{ sub.code }}</pre>
+                  </details>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="p-8 text-center text-xs text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200" id="emptyHistoryNotice">
+                У вас еще нет отправок по этой задаче. Проверьте первое решение!
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div id="tabCommunityContent" class="hidden space-y-3">
+          {% if not is_solved %}
+            <div class="p-8 text-center space-y-3 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+              <div class="w-12 h-12 mx-auto rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-lock"></i>
+              </div>
+              <h4 class="font-bold text-slate-800 text-sm">Решения сообщества заблокированы</h4>
+              <p class="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
+                Чтобы исключить списывание, решения других пользователей станут доступны сразу после того, как вы сами успешно решите эту задачу.
+              </p>
+            </div>
+          {% else %}
+            <div class="flex items-center justify-between pb-2">
+              <span class="text-xs font-bold text-slate-500 uppercase">Лучшие решения других студентов:</span>
+              <button type="button" id="btnRefreshCommunity" class="text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center space-x-1">
+                <i class="fa-solid fa-rotate-right"></i>
+                <span>Обновить</span>
+              </button>
+            </div>
+
+            <div id="communitySolutionsList" class="space-y-3 max-h-96 overflow-y-auto pr-1">
+              <div class="text-center py-6 text-xs text-slate-400">
+                <i class="fa-solid fa-circle-notch fa-spin mr-1"></i>Загрузка решений участников...
+              </div>
+            </div>
+          {% endif %}
         </div>
 
       </div>
@@ -390,7 +501,7 @@
     console.error("Ошибка парсинга initial-task-code:", e);
   }
 
-  const currentCode = `{{ initial_code|escapejs }}` || initialCodeData || "# Напишите решение здесь\n";
+  const currentCode = `{{ initial_code|escapejs }}` || initialCodeData || "def solution():\n    pass\n";
 
   let editorInstance = null;
   const editorEl = document.getElementById("editor");
@@ -415,6 +526,14 @@
 
       document.getElementById('themeSelector').addEventListener('change', (e) => {
         editorInstance.setTheme(e.target.value);
+      });
+
+      editorInstance.commands.addCommand({
+        name: 'submitSolution',
+        bindKey: {win: 'Ctrl-Enter', mac: 'Command-Enter'},
+        exec: function() {
+          document.getElementById('btnSubmitSolution').click();
+        }
       });
 
     } else {
@@ -461,16 +580,28 @@
   const tabTestsBtn = document.getElementById('tabTestsBtn');
   const tabCustomInputBtn = document.getElementById('tabCustomInputBtn');
   const tabConsoleBtn = document.getElementById('tabConsoleBtn');
+  const tabHistoryBtn = document.getElementById('tabHistoryBtn');
+  const tabCommunityBtn = document.getElementById('tabCommunityBtn');
 
   const tabTestsContent = document.getElementById('tabTestsContent');
   const tabCustomInputContent = document.getElementById('tabCustomInputContent');
   const tabConsoleContent = document.getElementById('tabConsoleContent');
+  const tabHistoryContent = document.getElementById('tabHistoryContent');
+  const tabCommunityContent = document.getElementById('tabCommunityContent');
+
+  const allTabs = [
+    { btn: tabTestsBtn, content: tabTestsContent },
+    { btn: tabCustomInputBtn, content: tabCustomInputContent },
+    { btn: tabConsoleBtn, content: tabConsoleContent },
+    { btn: tabHistoryBtn, content: tabHistoryContent },
+    { btn: tabCommunityBtn, content: tabCommunityContent }
+  ];
 
   function switchTab(activeBtn, activeContent) {
-    [tabTestsBtn, tabCustomInputBtn, tabConsoleBtn].forEach(b => {
-      b.className = "px-3.5 py-1.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center space-x-1.5";
+    allTabs.forEach(t => {
+      t.btn.className = "px-3.5 py-1.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center space-x-1.5";
+      t.content.classList.add('hidden');
     });
-    [tabTestsContent, tabCustomInputContent, tabConsoleContent].forEach(c => c.classList.add('hidden'));
 
     activeBtn.className = "px-3.5 py-1.5 rounded-xl bg-sky-50 text-sky-700 border border-sky-200 flex items-center space-x-1.5";
     activeContent.classList.remove('hidden');
@@ -479,12 +610,171 @@
   tabTestsBtn.addEventListener('click', () => switchTab(tabTestsBtn, tabTestsContent));
   tabCustomInputBtn.addEventListener('click', () => switchTab(tabCustomInputBtn, tabCustomInputContent));
   tabConsoleBtn.addEventListener('click', () => switchTab(tabConsoleBtn, tabConsoleContent));
+  tabHistoryBtn.addEventListener('click', () => switchTab(tabHistoryBtn, tabHistoryContent));
+  tabCommunityBtn.addEventListener('click', () => {
+    switchTab(tabCommunityBtn, tabCommunityContent);
+    loadCommunitySolutions();
+  });
+
+  function toggleZenMode() {
+    const wrapper = document.getElementById('editorWrapper');
+    const isZen = wrapper.classList.toggle('zen-mode');
+    const zenText = document.getElementById('zenModeText');
+    const icon = document.querySelector('#btnZenMode i');
+    if (isZen) {
+      zenText.textContent = "Выход";
+      icon.className = "fa-solid fa-compress text-amber-400";
+    } else {
+      zenText.textContent = "Zen";
+      icon.className = "fa-solid fa-expand text-sky-400";
+    }
+    if (editorInstance) {
+      editorInstance.resize();
+    }
+  }
+
+  document.getElementById('btnZenMode').addEventListener('click', toggleZenMode);
+
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      document.getElementById('btnSubmitSolution').click();
+    }
+    if (e.key === 'Escape') {
+      const wrapper = document.getElementById('editorWrapper');
+      if (wrapper && wrapper.classList.contains('zen-mode')) {
+        toggleZenMode();
+      }
+    }
+  });
+
+  document.getElementById('btnFormatCode').addEventListener('click', async () => {
+    const code = getCode();
+    try {
+      const resp = await fetch('{% url "api_format_code" %}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify({ code })
+      });
+      const data = await resp.json();
+      if (data.success) {
+        setCode(data.code);
+      } else {
+        alert('Ошибка форматирования: ' + (data.message || 'Синтаксическая ошибка'));
+      }
+    } catch (err) {
+      console.error('Format error:', err);
+    }
+  });
 
   document.getElementById('btnResetCode').addEventListener('click', () => {
     if (confirm('Сбросить текущий код к исходному шаблону?')) {
-      setCode(initialCodeData || "# Напишите решение здесь\n");
+      setCode(initialCodeData || "def solution():\n    pass\n");
     }
   });
+
+  const btnUnlockHint = document.getElementById('btnUnlockHint');
+  if (btnUnlockHint) {
+    btnUnlockHint.addEventListener('click', async () => {
+      if (!confirm('Открыть подсказку за 5 XP?')) return;
+      try {
+        const resp = await fetch('{% url "api_unlock_hint" task.slug %}', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+          }
+        });
+        const data = await resp.json();
+        if (data.success) {
+          const lockedBox = document.getElementById('hintLockedBox');
+          if (lockedBox) lockedBox.classList.add('hidden');
+          const unlockedBox = document.getElementById('hintUnlockedBox');
+          if (unlockedBox) {
+            document.getElementById('hintUnlockedText').textContent = data.hint;
+            unlockedBox.classList.remove('hidden');
+          }
+        } else {
+          alert(data.message || 'Ошибка открытия подсказки');
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    });
+  }
+
+  function bindRestoreButtons() {
+    document.querySelectorAll('.btn-restore-code').forEach(btn => {
+      btn.onclick = function() {
+        const code = this.getAttribute('data-code');
+        if (code) {
+          setCode(code);
+          window.scrollTo({ top: document.getElementById('editorWrapper').offsetTop - 20, behavior: 'smooth' });
+        }
+      };
+    });
+  }
+  bindRestoreButtons();
+
+  let communityLoaded = false;
+  async function loadCommunitySolutions() {
+    const container = document.getElementById('communitySolutionsList');
+    if (!container || communityLoaded) return;
+
+    try {
+      const resp = await fetch('{% url "api_community_solutions" task.slug %}');
+      const data = await resp.json();
+      if (!data.success) {
+        container.innerHTML = `<div class="p-6 text-center text-xs text-rose-500">${data.message}</div>`;
+        return;
+      }
+
+      communityLoaded = true;
+      if (data.solutions && data.solutions.length > 0) {
+        container.innerHTML = data.solutions.map(s => `
+          <div class="p-4 rounded-2xl border border-slate-200/80 bg-slate-50 space-y-3">
+            <div class="flex items-center justify-between text-xs">
+              <div class="flex items-center space-x-2.5">
+                <div class="w-8 h-8 rounded-full bg-sky-100 text-sky-700 font-bold flex items-center justify-center text-xs font-mono">
+                  ${s.username.substring(0, 2).toUpperCase()}
+                </div>
+                <div>
+                  <div class="font-bold text-slate-800">${s.username}</div>
+                  <div class="text-[10px] text-slate-400 font-mono">Уровень ${s.level} • ${s.xp} XP</div>
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-2">
+                <span class="text-[11px] font-mono text-emerald-600 font-bold">${s.execution_time_ms} мс</span>
+                <button type="button" class="btn-restore-code px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white hover:bg-sky-50 text-sky-700 border border-slate-200 shadow-xs transition-colors flex items-center space-x-1" data-code="${s.code.replace(/"/g, '&quot;')}">
+                  <i class="fa-solid fa-copy"></i>
+                  <span>В редактор</span>
+                </button>
+              </div>
+            </div>
+
+            <pre class="p-3 bg-slate-900 text-slate-100 rounded-xl font-mono text-xs overflow-x-auto whitespace-pre">${s.code}</pre>
+          </div>
+        `).join('');
+        bindRestoreButtons();
+      } else {
+        container.innerHTML = `<div class="p-8 text-center text-xs text-slate-400">Пока никто другой не опубликовал решение этой задачи. Будьте первым!</div>`;
+      }
+    } catch (e) {
+      container.innerHTML = `<div class="p-6 text-center text-xs text-rose-500">Не удалось загрузить решения сообщества: ${e}</div>`;
+    }
+  }
+
+  const btnRefreshCommunity = document.getElementById('btnRefreshCommunity');
+  if (btnRefreshCommunity) {
+    btnRefreshCommunity.addEventListener('click', () => {
+      communityLoaded = false;
+      loadCommunitySolutions();
+    });
+  }
 
   document.getElementById('btnTestRun').addEventListener('click', async () => {
     const code = getCode();
@@ -543,6 +833,39 @@
       const data = await resp.json();
       spinner.classList.add('hidden');
 
+      if (data.submission) {
+        const historyContainer = document.getElementById('historyListContainer');
+        const emptyNotice = document.getElementById('emptyHistoryNotice');
+        if (emptyNotice) emptyNotice.remove();
+
+        const newSubItem = document.createElement('div');
+        newSubItem.className = `p-3 rounded-2xl border border-slate-200/80 ${data.submission.status === 'accepted' ? 'bg-emerald-50/40' : 'bg-slate-50'} space-y-2 animate-in fade-in duration-300`;
+        newSubItem.innerHTML = `
+          <div class="flex items-center justify-between text-xs">
+            <div class="flex items-center space-x-2 font-bold">
+              <i class="fa-solid ${data.submission.status === 'accepted' ? 'fa-circle-check text-emerald-600' : 'fa-circle-xmark text-rose-600'}"></i>
+              <span class="${data.submission.status === 'accepted' ? 'text-emerald-700' : 'text-rose-700'}">${data.submission.status_display}</span>
+              <span class="text-slate-400 font-mono text-[11px]">(${data.submission.tests_passed}/${data.submission.tests_total} тестов)</span>
+              <span class="text-slate-300">•</span>
+              <span class="text-slate-400 font-mono text-[11px]">${data.submission.execution_time_ms} мс</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="text-[11px] font-mono text-slate-400">${data.submission.date}</span>
+              <button type="button" class="btn-restore-code px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white hover:bg-sky-50 text-sky-700 border border-slate-200 shadow-xs transition-colors flex items-center space-x-1" data-code="${data.submission.code.replace(/"/g, '&quot;')}">
+                <i class="fa-solid fa-arrow-rotate-left"></i>
+                <span>В редактор</span>
+              </button>
+            </div>
+          </div>
+          <details class="text-xs">
+            <summary class="cursor-pointer text-[11px] font-semibold text-slate-500 hover:text-slate-800">Показать исходный код посылки</summary>
+            <pre class="mt-2 p-2.5 bg-slate-900 text-slate-100 rounded-xl font-mono text-[11px] overflow-x-auto whitespace-pre">${data.submission.code}</pre>
+          </details>
+        `;
+        historyContainer.prepend(newSubItem);
+        bindRestoreButtons();
+      }
+
       if (data.status === 'accepted') {
         statusBanner.className = "p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-800 flex items-center justify-between";
         statusBanner.innerHTML = `
@@ -552,14 +875,6 @@
           </div>
           <span class="px-2.5 py-1 rounded-xl bg-emerald-100 text-emerald-800 font-mono">+${data.xp_gained} XP</span>
         `;
-
-        if (typeof confetti === 'function') {
-          confetti({
-            particleCount: 80,
-            spread: 70,
-            origin: { y: 0.6 }
-          });
-        }
 
         if (data.reference_solution) {
           const refBlock = document.getElementById('refSolutionBlock');

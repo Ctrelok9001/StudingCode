@@ -16,7 +16,7 @@
         </div>
         <div class="flex items-center space-x-2 text-xs text-slate-500">
           <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-50 text-sky-700">
-            {{ user_level_title }} (Уровень {{ profile.level }})
+            Уровень {{ profile.level }}
           </span>
           <span>•</span>
           <span>На платформе с {{ user.date_joined|date:"d E Y" }}</span>
@@ -31,10 +31,30 @@
       </div>
       <div class="flex-1 sm:flex-none p-3 rounded-2xl bg-orange-50 border border-orange-200 text-center sm:text-right">
         <div class="text-[10px] uppercase font-bold text-orange-700">Ударный режим</div>
-        <div class="text-xl font-extrabold font-mono text-orange-600">{{ profile.streak_days }} дн. 🔥</div>
+        <div class="text-xl font-extrabold font-mono text-orange-600">{{ profile.streak_days }} дн.</div>
       </div>
     </div>
   </div>
+
+  {% if certificates %}
+    <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
+      <h3 class="font-extrabold text-sm uppercase tracking-wider text-slate-400 flex items-center space-x-2">
+        <i class="fa-solid fa-award text-amber-500"></i>
+        <span>Ваши именные сертификаты об окончании курсов</span>
+      </h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {% for cert in certificates %}
+          <a href="{% url 'course_certificate' cert.course.slug %}" class="p-4 rounded-2xl border border-amber-200 bg-amber-50/50 hover:bg-amber-50 flex items-center justify-between transition-colors group">
+            <div class="space-y-1">
+              <div class="font-bold text-xs text-slate-900 group-hover:text-amber-800">{{ cert.course.title }}</div>
+              <div class="text-[11px] text-slate-500 font-mono">{{ cert.certificate_code }} • {{ cert.issued_at|date:"d.m.Y" }}</div>
+            </div>
+            <i class="fa-solid fa-arrow-up-right-from-square text-amber-600 text-xs"></i>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
 
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
@@ -62,6 +82,7 @@
         </button>
       </form>
     </div>
+
     <div class="lg:col-span-2 bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
       <div class="flex items-center justify-between">
         <h3 class="font-extrabold text-sm uppercase tracking-wider text-slate-400 flex items-center space-x-2">
@@ -69,7 +90,7 @@
           <span>История ваших решений</span>
         </h3>
         <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-xl">
-          Решено уникальных задач: {{ solved_count }}
+          Решено уникальных задач: {{ accepted_count }}
         </span>
       </div>
 
@@ -103,8 +124,6 @@
         {% endfor %}
       </div>
     </div>
-
   </div>
-
 </div>
 {% endblock %}

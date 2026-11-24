@@ -378,7 +378,7 @@ class Command(BaseCommand):
             defaults={
                 "title": "Урок 1: Функция print() и первая программа",
                 "content": (
-                    "Добро пожаловать в мир Python! 🚀\n\n"
+                    "Добро пожаловать в мир Python!\n\n"
                     "Для вывода информации на экран в Python используется встроенная функция `print()`.\n\n"
                     "```python\n"
                     "print('Привет, мир!')\n"

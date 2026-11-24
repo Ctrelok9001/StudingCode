@@ -10,6 +10,7 @@ urlpatterns = [
 
     path('courses/', views.courses_list_view, name='courses_list'),
     path('courses/<slug:slug>/', views.course_detail_view, name='course_detail'),
+    path('courses/<slug:slug>/certificate/', views.course_certificate_view, name='course_certificate'),
     path('courses/<slug:course_slug>/<slug:lesson_slug>/', views.lesson_detail_view, name='lesson_detail'),
 
     path('playground/', views.playground_view, name='playground'),
@@ -22,5 +23,9 @@ urlpatterns = [
     path('demo-login/', views.quick_demo_login, name='demo_login'),
 
     path('api/run-code/', views.run_code_api, name='api_run_code'),
+    path('api/format-code/', views.format_code_api, name='api_format_code'),
+    path('api/quiz/check/', views.check_quiz_api, name='api_check_quiz'),
     path('api/tasks/<slug:slug>/submit/', views.submit_task_api, name='api_submit_task'),
+    path('api/tasks/<slug:slug>/unlock-hint/', views.unlock_hint_api, name='api_unlock_hint'),
+    path('api/tasks/<slug:slug>/community-solutions/', views.community_solutions_api, name='api_community_solutions'),
 ]

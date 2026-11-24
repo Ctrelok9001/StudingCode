@@ -1,22 +1,102 @@
 import sys
+import os
+import ast
 import subprocess
 import time
 
 
+FORBIDDEN_MODULES = {
+    "os", "subprocess", "shutil", "socket", "urllib", "requests",
+    "http", "ftplib", "smtplib", "telnetlib", "pty", "commands",
+    "multiprocessing", "threading", "ctypes", "winreg", "msvcrt",
+    "posix", "pwd", "spwd", "grp", "crypt", "termios", "resource",
+    "importlib", "pickle", "shelve", "marshal", "webbrowser",
+    "tempfile", "platform"
+}
+
+FORBIDDEN_FUNCTIONS = {
+    "eval", "exec", "__import__", "compile"
+}
+
+
+def analyze_code_safety(code: str) -> tuple[bool, str]:
+    try:
+        tree = ast.parse(code)
+    except (SyntaxError, IndentationError):
+        return True, ""
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                root_pkg = alias.name.split('.')[0]
+                if root_pkg in FORBIDDEN_MODULES:
+                    return False, f"Импорт модуля '{alias.name}' заблокирован системой безопасности."
+        elif isinstance(node, ast.ImportFrom):
+            if node.module:
+                root_pkg = node.module.split('.')[0]
+                if root_pkg in FORBIDDEN_MODULES:
+                    return False, f"Импорт из модуля '{node.module}' заблокирован системой безопасности."
+        elif isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Name):
+                if node.func.id in FORBIDDEN_FUNCTIONS:
+                    return False, f"Вызов функции '{node.func.id}()' заблокирован системой безопасности."
+            elif isinstance(node.func, ast.Attribute):
+                if node.func.attr in ("system", "popen", "spawn", "fork", "execv", "execve"):
+                    return False, f"Вызов системного метода '{node.func.attr}()' заблокирован."
+    return True, ""
+
+
+def format_python_code(code: str) -> tuple[bool, str]:
+    if not code or not code.strip():
+        return True, ""
+    try:
+        tree = ast.parse(code)
+        formatted = ast.unparse(tree)
+        return True, formatted
+    except Exception as e:
+        return False, str(e)
+
+
+def decode_output(raw_bytes: bytes) -> str:
+    if not raw_bytes:
+        return ""
+    for enc in ("utf-8", "cp1251", "cp866"):
+        try:
+            return raw_bytes.decode(enc)
+        except UnicodeDecodeError:
+            continue
+    return raw_bytes.decode("utf-8", errors="replace")
+
+
 def execute_python_code(code: str, stdin_data: str = "", timeout: float = 3.0) -> dict:
+    is_safe, security_msg = analyze_code_safety(code)
+    if not is_safe:
+        return {
+            "success": False,
+            "status": "security_error",
+            "stdout": "",
+            "stderr": security_msg,
+            "duration_ms": 0,
+            "message": security_msg
+        }
 
     start_time = time.perf_counter()
+    env = os.environ.copy()
+    env["PYTHONIOENCODING"] = "utf-8"
+    env["PYTHONUTF8"] = "1"
+
     try:
         process = subprocess.Popen(
-            [sys.executable, "-I", "-s", "-c", code],
+            [sys.executable, "-X", "utf8", "-I", "-s", "-c", code],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True,
-            encoding="utf-8",
-            errors="replace"
+            env=env
         )
-        stdout, stderr = process.communicate(input=stdin_data, timeout=timeout)
+        stdin_bytes = stdin_data.encode("utf-8") if isinstance(stdin_data, str) else stdin_data
+        stdout_bytes, stderr_bytes = process.communicate(input=stdin_bytes, timeout=timeout)
+        stdout = decode_output(stdout_bytes)
+        stderr = decode_output(stderr_bytes)
         duration_ms = int((time.perf_counter() - start_time) * 1000)
 
         if process.returncode != 0:
@@ -76,7 +156,6 @@ def normalize_output(text: str) -> str:
 
 
 def run_test_cases(code: str, test_cases) -> dict:
-
     results = []
     tests_passed = 0
     total_time_ms = 0

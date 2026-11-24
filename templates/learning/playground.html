@@ -16,6 +16,22 @@
     background-color: #1a1d24 !important;
     color: #f8fafc !important;
   }
+  #playgroundWrapper.zen-mode {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 9999 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  #playgroundWrapper.zen-mode #playgroundEditor {
+    height: calc(100vh - 120px) !important;
+    flex: 1 1 auto;
+  }
 </style>
 {% endblock %}
 
@@ -38,14 +54,18 @@
     </div>
 
     <div class="flex items-center space-x-3">
+      <span class="text-[11px] text-slate-400 font-mono hidden sm:inline">
+        <kbd class="px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 text-[10px]">Ctrl</kbd> + <kbd class="px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 text-[10px]">Enter</kbd>
+      </span>
       <button type="button" id="btnRunPlayground" class="px-5 py-2.5 rounded-xl font-bold text-xs text-white pylearn-btn flex items-center space-x-2 shadow-md hover:scale-105 transition-all">
         <i class="fa-solid fa-play"></i>
         <span>Запустить код</span>
       </button>
     </div>
   </div>
+
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-    <div class="lg:col-span-7 bg-slate-900 rounded-3xl shadow-xl border border-slate-800 overflow-hidden flex flex-col">
+    <div id="playgroundWrapper" class="lg:col-span-7 bg-slate-900 rounded-3xl shadow-xl border border-slate-800 overflow-hidden flex flex-col">
       <div class="px-5 py-3 bg-slate-800 border-b border-slate-700 flex items-center justify-between text-xs">
         <div class="flex items-center space-x-3">
           <div class="flex space-x-1.5">
@@ -55,11 +75,23 @@
           </div>
           <span class="font-mono text-sky-400 font-bold">playground.py</span>
         </div>
-        <span class="text-slate-400 text-[11px] font-mono">Python 3.13</span>
+
+        <div class="flex items-center space-x-3 text-slate-300">
+          <button type="button" id="btnFormatPlayground" class="hover:text-white transition-colors text-slate-300 flex items-center space-x-1" title="Автоформатирование кода (PEP 8)">
+            <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i>
+            <span>Формат</span>
+          </button>
+          <button type="button" id="btnZenPlayground" class="hover:text-white transition-colors text-slate-300 flex items-center space-x-1" title="Полноэкранный режим (Zen Mode)">
+            <i class="fa-solid fa-expand text-sky-400"></i>
+            <span id="zenPlaygroundText">Zen</span>
+          </button>
+          <span class="text-slate-500 text-[11px] font-mono">Python 3.13</span>
+        </div>
       </div>
 
       <div id="playgroundEditor">{{ default_code }}</div>
     </div>
+
     <div class="lg:col-span-5 space-y-4">
       <div class="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-sm space-y-2">
         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
@@ -68,6 +100,7 @@
         </label>
         <textarea id="playgroundStdin" rows="3" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono focus:outline-none focus:border-sky-500 focus:bg-white" placeholder="Каждое значение с новой строки..."></textarea>
       </div>
+
       <div class="bg-slate-900 rounded-3xl p-5 border border-slate-800 shadow-sm space-y-3">
         <div class="flex items-center justify-between">
           <div class="text-xs font-bold font-mono text-slate-300 flex items-center space-x-2">
@@ -80,13 +113,10 @@
           </div>
         </div>
 
-        <pre id="playgroundOutput" class="w-full min-h-[200px] p-4 rounded-2xl bg-black/40 text-emerald-400 text-xs font-mono overflow-x-auto whitespace-pre-wrap">Нажмите «Запустить код» для выполнения программы...</pre>
+        <pre id="playgroundOutput" class="w-full min-h-[200px] p-4 rounded-2xl bg-black/40 text-emerald-400 text-xs font-mono overflow-x-auto whitespace-pre-wrap">Нажмите «Запустить код» (или Ctrl+Enter) для выполнения программы...</pre>
       </div>
-
     </div>
-
   </div>
-
 </div>
 {% endblock %}
 
@@ -105,6 +135,15 @@
       tabSize: 4,
       useSoftTabs: true,
     });
+
+    editor.commands.addCommand({
+      name: 'runCode',
+      bindKey: {win: 'Ctrl-Enter', mac: 'Command-Enter'},
+      exec: function() {
+        document.getElementById('btnRunPlayground').click();
+      }
+    });
+
   } catch (e) {
     console.error("Editor error", e);
   }
@@ -124,6 +163,60 @@
     return cookieValue;
   }
   const csrftoken = getCookie('csrftoken');
+
+  function togglePlaygroundZen() {
+    const wrapper = document.getElementById('playgroundWrapper');
+    const isZen = wrapper.classList.toggle('zen-mode');
+    const text = document.getElementById('zenPlaygroundText');
+    const icon = document.querySelector('#btnZenPlayground i');
+    if (isZen) {
+      text.textContent = "Выход";
+      icon.className = "fa-solid fa-compress text-amber-400";
+    } else {
+      text.textContent = "Zen";
+      icon.className = "fa-solid fa-expand text-sky-400";
+    }
+    if (editor) {
+      editor.resize();
+    }
+  }
+
+  document.getElementById('btnZenPlayground').addEventListener('click', togglePlaygroundZen);
+
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      document.getElementById('btnRunPlayground').click();
+    }
+    if (e.key === 'Escape') {
+      const wrapper = document.getElementById('playgroundWrapper');
+      if (wrapper && wrapper.classList.contains('zen-mode')) {
+        togglePlaygroundZen();
+      }
+    }
+  });
+
+  document.getElementById('btnFormatPlayground').addEventListener('click', async () => {
+    const code = editor ? editor.getValue() : "";
+    try {
+      const resp = await fetch('{% url "api_format_code" %}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify({ code })
+      });
+      const data = await resp.json();
+      if (data.success && editor) {
+        editor.setValue(data.code, -1);
+      } else {
+        alert('Ошибка форматирования: ' + (data.message || 'Синтаксическая ошибка'));
+      }
+    } catch (err) {
+      console.error('Format error:', err);
+    }
+  });
 
   document.getElementById('btnRunPlayground').addEventListener('click', async () => {
     const code = editor ? editor.getValue() : "";
